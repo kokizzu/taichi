@@ -1,9 +1,9 @@
 import argparse
 import os
 import platform
+import re
 import shutil
 import sys
-import re
 
 import taichi as ti
 
@@ -88,7 +88,6 @@ def build(project_name):
         assert os.path.exists(libdevice_path)
         shutil.copy(libdevice_path, 'taichi/lib/slim_libdevice.10.bc')
 
-    ti.core.compile_runtimes()
     runtime_dir = ti.core.get_runtime_dir()
     for f in os.listdir(runtime_dir):
         if f.startswith('runtime_') and f.endswith('.bc'):
@@ -143,11 +142,12 @@ def parse_args():
 def main():
     args = parse_args()
     mode = args.mode
-    pypi_user = 'yuanming-hu'
+    pypi_user = '__token__'
     pypi_repo = ''
     project_name = args.project_name
 
     env_pypi_pwd = os.environ.get('PYPI_PWD', '')
+
     if mode == 'try_upload':
         if env_pypi_pwd == '':
             print("Missing environment variable PYPI_PWD")
@@ -161,7 +161,6 @@ def main():
     os.environ['TWINE_PASSWORD'] = env_pypi_pwd
 
     if mode == 'upload' and args.testpypi:
-        pypi_user = '__token__'
         pypi_repo = '--repository testpypi'
 
     if not args.skip_build:

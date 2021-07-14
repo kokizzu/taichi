@@ -99,7 +99,7 @@ SNode *SNode::get_least_sparse_ancestor() const {
 
 int SNode::shape_along_axis(int i) const {
   const auto &extractor = extractors[physical_index_position[i]];
-  return extractor.num_elements * (1 << extractor.trailing_bits);
+  return extractor.num_elements;
 }
 
 SNode::SNode() : SNode(0, SNodeType::undefined) {
@@ -198,6 +198,14 @@ bool SNode::has_grad() const {
 SNode *SNode::get_grad() const {
   TI_ASSERT(has_grad());
   return grad_info->grad_snode();
+}
+
+void SNode::set_snode_tree_id(int id) {
+  snode_tree_id_ = id;
+}
+
+int SNode::get_snode_tree_id() {
+  return snode_tree_id_;
 }
 
 TLANG_NAMESPACE_END

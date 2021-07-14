@@ -19,7 +19,7 @@ class IRBuilder {
   void reset();
 
   // Extract the IR.
-  std::unique_ptr<IRNode> extract_ir();
+  std::unique_ptr<Block> extract_ir();
 
   // General inserter. Returns stmt.get().
   template <typename XStmt>
@@ -93,6 +93,7 @@ class IRBuilder {
   [[nodiscard]] LoopGuard get_loop_guard(XStmt *loop) {
     return LoopGuard(*this, loop);
   }
+
   [[nodiscard]] IfGuard get_if_guard(IfStmt *if_stmt, bool true_branch) {
     return IfGuard(*this, if_stmt, true_branch);
   }
@@ -125,8 +126,12 @@ class IRBuilder {
   // Constants. TODO: add more types
   ConstStmt *get_int32(int32 value);
   ConstStmt *get_int64(int64 value);
+  ConstStmt *get_uint32(uint32 value);
+  ConstStmt *get_uint64(uint64 value);
   ConstStmt *get_float32(float32 value);
   ConstStmt *get_float64(float64 value);
+
+  RandStmt *create_rand(DataType value_type);
 
   // Load kernel arguments.
   ArgLoadStmt *create_arg_load(int arg_id, DataType dt, bool is_ptr);
@@ -185,6 +190,16 @@ class IRBuilder {
   BinaryOpStmt *create_cmp_eq(Stmt *l, Stmt *r);
   BinaryOpStmt *create_cmp_ne(Stmt *l, Stmt *r);
 
+  // Atomic operations.
+  AtomicOpStmt *create_atomic_add(Stmt *dest, Stmt *val);
+  AtomicOpStmt *create_atomic_sub(Stmt *dest, Stmt *val);
+  AtomicOpStmt *create_atomic_max(Stmt *dest, Stmt *val);
+  AtomicOpStmt *create_atomic_min(Stmt *dest, Stmt *val);
+  // Atomic bitwise operations.
+  AtomicOpStmt *create_atomic_and(Stmt *dest, Stmt *val);
+  AtomicOpStmt *create_atomic_or(Stmt *dest, Stmt *val);
+  AtomicOpStmt *create_atomic_xor(Stmt *dest, Stmt *val);
+
   // Ternary operations. Returns the result.
   TernaryOpStmt *create_select(Stmt *cond,
                                Stmt *true_result,
@@ -192,7 +207,7 @@ class IRBuilder {
 
   // Print values and strings. Arguments can be Stmt* or std::string.
   template <typename... Args>
-  PrintStmt *create_print(Args &&...args) {
+  PrintStmt *create_print(Args &&... args) {
     return insert(Stmt::make_typed<PrintStmt>(std::forward<Args>(args)...));
   }
 
@@ -233,8 +248,16 @@ class IRBuilder {
     }
   }
 
+  // Autodiff stack operations.
+  AdStackAllocaStmt *create_ad_stack(const DataType &dt, std::size_t max_size);
+  void ad_stack_push(AdStackAllocaStmt *stack, Stmt *val);
+  void ad_stack_pop(AdStackAllocaStmt *stack);
+  AdStackLoadTopStmt *ad_stack_load_top(AdStackAllocaStmt *stack);
+  AdStackLoadTopAdjStmt *ad_stack_load_top_adjoint(AdStackAllocaStmt *stack);
+  void ad_stack_accumulate_adjoint(AdStackAllocaStmt *stack, Stmt *val);
+
  private:
-  std::unique_ptr<IRNode> root_{nullptr};
+  std::unique_ptr<Block> root_{nullptr};
   InsertPoint insert_point_;
 };
 
